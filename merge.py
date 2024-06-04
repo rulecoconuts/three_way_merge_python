@@ -1,17 +1,27 @@
 from typing import Self
 from io import TextIOWrapper
 
+
 class MergeResult:
-    def __init__(self, original :list[str], a:list[str], b:list[str], merged_from_a: set[int], merged_from_b: set[int]):
+    def __init__(
+        self,
+        original: list[str],
+        a: list[str],
+        b: list[str],
+        merged_from_a: set[int],
+        merged_from_b: set[int],
+    ):
         self.original = original
         self.a = a
         self.b = b
         self.merged_from_a = merged_from_a
         self.merged_from_b = merged_from_b
 
-    def contains_conflicts(self)->bool:
-        return MergeResult.__contains_conflicts(self.a, self.merged_from_a) or MergeResult.__contains_conflicts(self.b, self.merged_from_b)
-    
+    def contains_conflicts(self) -> bool:
+        return MergeResult.__contains_conflicts(
+            self.a, self.merged_from_a
+        ) or MergeResult.__contains_conflicts(self.b, self.merged_from_b)
+
     def write_to_file(self, file: TextIOWrapper):
         index = 0
         a_len = len(self.a)
@@ -19,7 +29,7 @@ class MergeResult:
         a_marker = "<" * 11
         b_marker = ">" * 11
         a = self.a
-        b=self.b
+        b = self.b
         merged_from_a = self.merged_from_a
         merged_from_b = self.merged_from_b
 
@@ -43,25 +53,23 @@ class MergeResult:
             elif index < b_len:
                 # only b is valid
                 line = b[index]
-                
+
             file.write(line)
-            index+=1
-
-
+            index += 1
 
     @staticmethod
-    def __contains_conflicts(v:list[str], merged:set[int])->bool:
-        return len(MergeResult.__get_conflicts(v, merged))>0
+    def __contains_conflicts(v: list[str], merged: set[int]) -> bool:
+        return len(MergeResult.__get_conflicts(v, merged)) > 0
 
     @staticmethod
-    def __get_conflicts(v:list[str], merged:set[int])->set[int]:
+    def __get_conflicts(v: list[str], merged: set[int]) -> set[int]:
         all_set = set(range(len(v)))
         return all_set.difference(merged)
-    
+
     @classmethod
-    def merge(cls, original: list[str], a:list[str], b:list[str]) -> Self:
-        merged_from_a:set[int] = set()
-        merged_from_b:set[int] = set()
+    def merge(cls, original: list[str], a: list[str], b: list[str]) -> Self:
+        merged_from_a: set[int] = set()
+        merged_from_b: set[int] = set()
         a_len = len(a)
         b_len = len(b)
         original_len = len(original)
@@ -82,7 +90,11 @@ class MergeResult:
                 elif original_line == b_line and original_line != a_line:
                     # only version a was changed. Take change from a
                     merged_from_a.add(line)
-                elif original_line != b_line and original_line != a_line and a_line == b_line:
+                elif (
+                    original_line != b_line
+                    and original_line != a_line
+                    and a_line == b_line
+                ):
                     # both versions made the same change
                     merged_from_a.add(line)
                     merged_from_b.add(line)
@@ -98,6 +110,11 @@ class MergeResult:
             elif original_line is not None and a_line is not None:
                 # the change only exists in version b
                 merged_from_b.add(line)
-
+            elif b_line is not None:
+                # only b is valid
+                merged_from_b.add(line)
+            elif a_line is not None:
+                # only a is valid
+                merged_from_a.add(line)
 
         return cls(original, a, b, merged_from_a, merged_from_b)
